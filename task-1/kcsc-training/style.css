@@ -1,0 +1,34 @@
+body {
+  font-size: 20px;
+}
+
+input,
+select {
+  margin-bottom: 6px;
+}
+
+tr:hover {
+  background-color: #fb5867;
+}
+
+table {
+  width: 60%;
+}
+
+table,
+th,
+td {
+  border: 1px solid black;
+  border-collapse: collapse;
+  padding: 8px;
+}
+
+.course-data {
+  text-align: center;
+  width: 100px;
+}
+
+.action {
+  text-align: center;
+  width: 50px;
+}
